@@ -40,7 +40,6 @@ public class Dataset
 		{
 			filesPath.add(Paths.get(f.getAbsolutePath()));
 		}
-		System.out.println("LOG> Datasets imported with success");
 	}
 	
 	public LinkedList<Station> importStations() throws IOException
@@ -60,7 +59,7 @@ public class Dataset
 						continue mainLoop;
 					}
 	        	}
-        		stations.add(new Station(csvRecord.get(1), new Coordinates(
+        		this.stations.add(new Station(csvRecord.get(1), new Coordinates(
         				Double.parseDouble(csvRecord.get(2)), 
         				Double.parseDouble(csvRecord.get(3)), 
         				Double.parseDouble(csvRecord.get(4))
@@ -69,6 +68,45 @@ public class Dataset
 	        
 	        csvParser.close();
 		}    
-		return stations;
+		return this.stations;
+	}
+	
+	public LinkedList<RegisteredWeather> importRegisteredWeathers() throws IOException
+	{
+		LinkedList<RegisteredWeather> rw = null;
+		for(Path path : this.filesPath)
+		{
+			Reader reader = Files.newBufferedReader(path);
+	        CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim());
+			rw = new LinkedList<RegisteredWeather>();
+		
+			for (CSVRecord csvRecord : csvParser) 
+	        {
+	        	for(int i = 0; i < this.stations.size(); i++)
+	        	{
+	        		if(this.stations.get(i).getName().equals(csvRecord.get(1)))
+					{
+						try
+						{
+							int dateDay = 1;
+							int dateMonth = Integer.parseInt(csvRecord.get("DATE").split("-")[1]);
+							int dateYear = Integer.parseInt(csvRecord.get("DATE").split("-")[0]);
+							Date date = new Date(dateDay, dateMonth, dateYear);
+							Temperature tMin = new Temperature(new FahrenheitDegree(Double.parseDouble(csvRecord.get("TMIN"))));
+							Temperature tMax = new Temperature(new FahrenheitDegree(Double.parseDouble(csvRecord.get("TMAX"))));
+							Temperature tAverage = new Temperature(new FahrenheitDegree(Double.parseDouble(csvRecord.get("TAVG"))));
+							Rainfall rainfall = new Rainfall(Double.parseDouble(csvRecord.get("PRCP")));							
+							this.stations.get(i).addRegisteredWeather(new RegisteredWeather(date, tMax, tMin, tAverage, rainfall));
+						}
+						catch(NumberFormatException e) // Means that one of the values above is null so we need to remove that station
+						{
+							this.stations.remove(this.stations.get(i));
+						}
+					}
+	        	}
+	        }
+	        csvParser.close();
+		}
+		return rw;
 	}
 }

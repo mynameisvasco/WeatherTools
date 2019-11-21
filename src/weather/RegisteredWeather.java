@@ -1,9 +1,9 @@
 package weather;
 
-import java.util.Date;
-
 import metrics.Rainfall;
 import metrics.Temperature;
+import metrics.Date;
+
 
 public class RegisteredWeather
 {
@@ -48,5 +48,13 @@ public class RegisteredWeather
 	public Rainfall getAverageRainfall()
 	{
 		return averageRainfall;
+	}
+	
+	public String toString()
+	{
+		return "Max Temperature: " + this.maxTemperature + "\n"
+				+ "Min Temperature: " + this.minTemperature + "\n"
+				+ "Average Temperature: " + this.averageTemperature + "\n"
+				+ "Average Rainfall: " + this.averageRainfall + "\n";
 	}
 }

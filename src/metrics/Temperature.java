@@ -14,8 +14,22 @@ public class Temperature
 		this.celsius = new CelsiusDegree(f).getValue();
 	}
 	
+	public double getValue()
+	{
+		return this.celsius;
+	}
+	
+	public Temperature decreaseAccuracy()
+	{
+		double celsius = this.celsius;
+		celsius = Math.round(celsius * 100);
+		celsius = celsius/100;
+		
+		return new Temperature(new CelsiusDegree(celsius));
+	}
+	
 	public String toString()
 	{
-		return this.celsius + " °C";
+		return this.celsius + " ÂºC";
 	}
 }
