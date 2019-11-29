@@ -16,35 +16,28 @@ public class TestBloomFilter
 		dataset.importFiles();
 		dataset.importStations();
 		dataset.importRegisteredWeathers();
-		BloomFilter bf = new BloomFilter(dataset.getStations().size(), 0.01);
-		List<Double> list = new ArrayList<Double>();
+		BloomFilter bf = new BloomFilter(1000, 0.01);
+		List<String> list = new ArrayList<String>();
 		
-		for(Station s : dataset.getStations())
+
+		//Use registered weathers of first station only
+		for(RegisteredWeather rw : dataset.getStations().get(0).getRegisteredWeathers())
 		{
-			for(RegisteredWeather rw : s.getRegisteredWeathers())
-			{
-				bf.add(rw.getAverageTemperature().getValue());
-				list.add(rw.getAverageTemperature().getValue());
-			}
+			bf.add(rw.generateHash());
+			list.add(rw.generateHash());
 		}
+	
 		
-		double i = 0;
-		while(i < 30)
-		{
-			i = Math.round(i * 10);
-			i = i / 10;
-			System.out.println(i + "-> Iteration: " + iterationSearch(i, list) + " - Bloom Filter: " + bloomFilterSearch(i, bf));
-			System.out.println("----------------------------");
-			i += 0.1;
-		}
+		String registeredWeatherToFind = "1/8/2019#0.6#22.8";
+		System.out.println("Iteration: " + iterationSearch(registeredWeatherToFind, list) + " - Bloom Filter: " + bloomFilterSearch(registeredWeatherToFind, bf));
 	}
 	
-	public static boolean iterationSearch(double element, List<Double> dataset)
+	public static boolean iterationSearch(String element, List<String> dataset)
 	{
 		long beforeTime = System.currentTimeMillis();
 		for(int i = 0; i < dataset.size(); i++)
 		{
-			if(dataset.get(i) == element)
+			if(dataset.get(i).equals(element))
 			{
 				System.out.println("Checked after: " + (System.currentTimeMillis() - beforeTime) + "ms (Iterative method)");
 				return true;
@@ -54,7 +47,7 @@ public class TestBloomFilter
 		return false;
 	}
 	
-	public static boolean bloomFilterSearch(double element, BloomFilter bf)
+	public static boolean bloomFilterSearch(String element, BloomFilter bf)
 	{
 		long beforeTime = System.currentTimeMillis();
 		boolean contains = bf.contains(element);

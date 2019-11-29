@@ -7,7 +7,8 @@ public class Rainfall
 	public Rainfall(double value)
 	{
 		super();
-		this.value = value;
+		value = Math.round(value * 10);
+		this.value = value / 10;
 	}
 	
 	public double getValue()

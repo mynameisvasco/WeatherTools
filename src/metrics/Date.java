@@ -146,7 +146,7 @@ public class Date
 		{
 			if(MONTHS_NAME[i].equals(month))
 			{
-				return i + 1;
+				return i + 2;
 			}
 		}
 		

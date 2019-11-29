@@ -50,6 +50,11 @@ public class RegisteredWeather
 		return averageRainfall;
 	}
 	
+	public String generateHash()
+	{
+		return this.date.toString() + "#" + this.getAverageRainfall().getValue() + "#" + this.getAverageTemperature().getValue();
+	}
+	
 	public String toString()
 	{
 		return "Max Temperature: " + this.maxTemperature + "\n"

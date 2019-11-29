@@ -18,17 +18,28 @@ import org.openstreetmap.gui.jmapviewer.interfaces.MapMarker;
 import org.openstreetmap.gui.jmapviewer.tilesources.OfflineOsmTileSource;
 
 import files.Dataset;
+import metrics.CelsiusDegree;
 import metrics.Coordinates;
 import metrics.Date;
+import metrics.Rainfall;
+import metrics.Temperature;
 import weather.RegisteredWeather;
 import weather.Station;
 
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-public class MainWindow implements MouseListener, ActionListener
+import javax.swing.JSpinner;
+import javax.swing.SpinnerModel;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+
+public class MainWindow implements MouseListener, ActionListener, ChangeListener
 {
 	
 	private JFrame mainFrame;
@@ -37,14 +48,23 @@ public class MainWindow implements MouseListener, ActionListener
 	private Dataset dataset;
 	private JComboBox<String> dateSelectorMonth;
 	private JComboBox<String> dateSelectorYear;
+	private JSpinner weatherTempSelector;
+	private JSpinner weatherRainfallSelector;
+	private JCheckBox weatherFilterCheck;
+	private SpinnerModel weatherTempModel = new SpinnerNumberModel(12.3, 1, 40, 0.1);
+	private SpinnerModel weatherRainfallModel = new SpinnerNumberModel(4.8, 0, 25, 0.1);
+	private JButton similarityButton;
 	private Date date;
+	private Temperature temp = new Temperature(new CelsiusDegree(12.3));
+	private Rainfall rain = new Rainfall(4.8);
 	
 	public MainWindow() throws IOException
-	{
+	{	
 		dataset = new Dataset();
 		this.importDatasets();
 		date = new Date("01/10/2018");
 		Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+		this.similarityButton = new JButton("Check similarity per year");
 		mainFrame = new JFrame("WeatherTools - Map");
 		mainFrame.setSize(1280,720);
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -52,8 +72,8 @@ public class MainWindow implements MouseListener, ActionListener
 		mainFrame.setLayout(new BorderLayout());
 		this.initDateSelector();
 		this.initMap();
+		this.initWeatherSelector();
 		this.initStationsMarkers();
-		
 		mainFrame.setVisible(true);
 	}
 	
@@ -76,11 +96,22 @@ public class MainWindow implements MouseListener, ActionListener
 		this.map.setMapMarkerList(new ArrayList<MapMarker>());
 		
 		for(Station s : dataset.getStations())
-		{
-			if(s.containsRegisteredWeatherInDate(this.date))
-			{				
-				MapMarkerDot marker = new MapMarkerDot(Color.RED, s.getLocation().getLatitude(), s.getLocation().getLongitude());
-				map.addMapMarker(marker);
+		{		
+			if(this.weatherFilterCheck.isSelected())
+			{		
+				if(s.containsWeather(this.date.toString() + "#" + this.rain.getValue() + "#" + this.temp.getValue()))
+				{				
+					MapMarkerDot marker = new MapMarkerDot(Color.RED, s.getLocation().getLatitude(), s.getLocation().getLongitude());
+					map.addMapMarker(marker);
+				}
+			}
+			else
+			{
+				if(s.containsRegisteredWeatherInDate(this.date))
+				{
+					MapMarkerDot marker = new MapMarkerDot(Color.RED, s.getLocation().getLatitude(), s.getLocation().getLongitude());
+					map.addMapMarker(marker);
+				}
 			}
 		}
 		
@@ -92,7 +123,7 @@ public class MainWindow implements MouseListener, ActionListener
 	{
 		dateSelectorMonth = new JComboBox<String>(Date.MONTHS_NAME);
 		dateSelectorYear = new JComboBox<String>(Date.yearsUntil2070());
-		dateSelectorMonth.setSelectedItem("November");
+		dateSelectorMonth.setSelectedItem("October");
 		dateSelectorYear.setSelectedIndex(18);
 		dateSelectorMonth.addActionListener(this);
 		dateSelectorYear.addActionListener(this);
@@ -106,6 +137,31 @@ public class MainWindow implements MouseListener, ActionListener
 		this.mainFrame.add(dateSelectorPanel, BorderLayout.NORTH);
 		
 		
+	}
+	
+	public void initWeatherSelector()
+	{
+		weatherTempSelector = new JSpinner(this.weatherTempModel);
+		weatherRainfallSelector = new JSpinner(this.weatherRainfallModel);
+		weatherFilterCheck = new JCheckBox("Enable filters");
+		JLabel tempLabel = new JLabel("Average Temperature");
+		JLabel rainLabel = new JLabel("Average Rainfall");
+		weatherTempSelector.addChangeListener(this);
+		weatherRainfallSelector.addChangeListener(this);
+		weatherFilterCheck.addChangeListener(this);
+		JPanel weatherSelectorPanel = new JPanel();
+		weatherSelectorPanel.setLayout(new GridLayout(3, 3));
+		weatherSelectorPanel.add(tempLabel);
+		weatherSelectorPanel.add(rainLabel);
+		weatherSelectorPanel.add(new JLabel(""));
+		weatherSelectorPanel.add(weatherTempSelector);
+		weatherSelectorPanel.add(weatherRainfallSelector);
+		weatherSelectorPanel.add(weatherFilterCheck);
+		weatherSelectorPanel.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
+		weatherSelectorPanel.add(this.similarityButton);
+		this.mainFrame.add(weatherSelectorPanel, BorderLayout.SOUTH);
+		this.map.revalidate();
+		this.map.repaint();
 	}
 	
 	public void importDatasets() throws IOException
@@ -199,6 +255,41 @@ public class MainWindow implements MouseListener, ActionListener
 		if(e.getSource() == this.dateSelectorMonth || e.getSource() == this.dateSelectorYear)
 		{
 			this.updateDate();
+			this.initStationsMarkers();
+		}
+	}
+
+	@Override
+	public void stateChanged(ChangeEvent e) 
+	{
+		if(e.getSource() == this.weatherRainfallSelector)
+		{
+			try
+			{
+				this.rain = new Rainfall((double) this.weatherRainfallSelector.getValue());
+			}
+			catch(NumberFormatException e1)
+			{
+				this.rain = new Rainfall(4.8);
+				this.weatherRainfallSelector.setValue(4.8);	
+			}
+			this.initStationsMarkers();
+		}
+		if(e.getSource() == this.weatherTempSelector)
+		{
+			try
+			{
+				this.temp = new Temperature(new CelsiusDegree((double) (this.weatherTempSelector.getValue())));
+			}
+			catch(NumberFormatException e2)
+			{
+				this.temp = new Temperature(new CelsiusDegree(12.3));
+				this.weatherTempSelector.setValue(12.3);
+			}
+			this.initStationsMarkers();
+		}
+		if(e.getSource() == this.weatherFilterCheck)
+		{
 			this.initStationsMarkers();
 		}
 		

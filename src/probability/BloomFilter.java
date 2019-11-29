@@ -11,15 +11,13 @@ public class BloomFilter
 	private int k; // number of hash functions
 	private int[] seeds;
 	private BitSet array;
-	private static final double LN2 = 0.6931471805599453; // ln(2)
-
 	
 	public BloomFilter(int n, double p)
 	{
 		this.n = n;
 		this.p = p;
-		this.m = (int) Math.abs(Math.ceil((this.n * Math.log(p) / Math.log(1/Math.pow(2,  Math.log(2)))))) * 1024;
-	    k = (int) Math.round(LN2 * this.m / this.n); //Best K
+		this.m = (int) Math.abs(Math.ceil((this.n * Math.log(this.p) / Math.log(1/Math.pow(2,  Math.log(2)))))) * 1024;
+	    k = (int) Math.round(Math.log(2) * this.m / this.n); //Best K
 		this.array = new BitSet(this.m);
 		this.seeds = generateSeeds();
 	}
@@ -58,7 +56,6 @@ public class BloomFilter
 		
 		return seeds;
 	}
-	
 }
 
 
