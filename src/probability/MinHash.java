@@ -1,6 +1,7 @@
 package probability;
 
 import java.util.ArrayList;
+
 import java.util.List;
 import java.util.stream.LongStream;
 
@@ -24,7 +25,8 @@ public class MinHash
 
     	long[] hashedValues1 = hash(values1);
     	long[] hashedValues2 = hash(values2);
-    	
+    	long[] tmp = new long[hashedValues1.length];
+    	int iTmp = 0;
     	int intersection = 0;
     	
     	for(int i = 0; i < hashedValues1.length; i++)
@@ -32,14 +34,18 @@ public class MinHash
     		int k = i; // Because scope in lambda
     		if(LongStream.of(hashedValues2).anyMatch(x -> x == hashedValues1[k]))
     		{
-    			intersection++;
+    			if(!LongStream.of(tmp).anyMatch(x -> x == hashedValues1[k]))
+    			{
+        			intersection++;	
+        			tmp[iTmp] = hashedValues1[k];
+        			iTmp++;
+    			}
     		}
     	}
     	
-    	double similarity = (double) intersection/(findUnion(hashedValues1, hashedValues2).length);
+    	double similarity = (double) intersection/(findUnion(values1, values2).length);
     	similarity = Math.round(similarity * 1000);
     	similarity = similarity / 1000;
-    	
         return similarity;
     }
 
@@ -95,27 +101,29 @@ public class MinHash
     }
     
     /* Union of multiple arrays */
-	private static long[] findUnion(long[]... arrays) {
+	private static double[] findUnion(double[]... arrays) 
+	{
 		int maxSize = 0;
 		int counter = 0;
  
-		for (long[] array : arrays)
+		for (double[] array : arrays)
 			maxSize += array.length;
-		long[] temp = new long[maxSize];
+		double[] temp = new double[maxSize];
  
-		for (long[] array : arrays)
-			for (long i : array)
+		for (double[] array : arrays)
+			for (double i : array)
 				if (!findDuplicated(temp, counter, i))
 					temp[counter++] = i;
  
-		long[] result = new long[counter];
+		double[] result = new double[counter];
 		for (int i = 0; i < counter; i++)
 			result[i] = temp[i];
  
 		return result;
 	}
  
-	private static boolean findDuplicated(long[] array, int counter, long value) {
+	private static boolean findDuplicated(double[] array, int counter, double value) 
+	{
 		for (int i = 0; i < counter; i++)
 			if (array[i] == value)
 				return true;
