@@ -6,12 +6,16 @@ public class Temperature
 	
 	public Temperature(CelsiusDegree c)
 	{
-		this.celsius = c.getValue();
+		
+		this.celsius = Math.round(c.getValue() * 1);
+		this.celsius = this.celsius / 1;
 	}
 	
 	public Temperature(FahrenheitDegree f)
 	{
 		this.celsius = new CelsiusDegree(f).getValue();
+		this.celsius = Math.round(this.celsius * 1);
+		this.celsius = this.celsius / 1;
 	}
 	
 	public double getValue()
@@ -19,14 +23,6 @@ public class Temperature
 		return this.celsius;
 	}
 	
-	public Temperature decreaseAccuracy()
-	{
-		double celsius = this.celsius;
-		celsius = Math.round(celsius * 100);
-		celsius = celsius/100;
-		
-		return new Temperature(new CelsiusDegree(celsius));
-	}
 	
 	public String toString()
 	{

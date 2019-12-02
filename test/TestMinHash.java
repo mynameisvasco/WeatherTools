@@ -1,44 +1,38 @@
 import java.io.IOException;
 
-import files.Dataset;
 import probability.MinHash;
-import weather.RegisteredWeather;
 
 public class TestMinHash 
 {
 	public static void main(String[] args) throws IOException
-	{
-		Dataset dataset = new Dataset();
-		dataset.importFiles();
-		dataset.importStations();
-		dataset.importRegisteredWeathers();
-		
+	{	
 		MinHash minHash = new MinHash(100);
 		
-		double[] temperatures1 = new double[] {5.1, 10.2, 9.1, 4.1, 25.4};
-		double[] temperatures2 = new double[] {1.1, 0.2, 9.1, 4.1, 25.4};
+		double[][] temperatures = new double[100][12];
 		
-		/*int i = 0;
-		if(i < 9)
+		for(int i = 0; i < temperatures.length; i++)
 		{
-			for(RegisteredWeather rw : dataset.getStations().get(0).getRegisteredWeathers(2019))
+			for(int k = 0; k < 12; k++)
 			{
-				temperatures1[i] = rw.getAverageTemperature().getValue();
-				i++;
-			}				
+				
+				temperatures[i][k] = randomTemp();
+			}
 		}
 		
-		i = 0;
-		if(i < 9)
+		for(int i = 0; i < temperatures.length; i++)
 		{
-			for(RegisteredWeather rw : dataset.getStations().get(1).getRegisteredWeathers(2019))
+			for(int k = 0; k < temperatures.length; k++)
 			{
-				temperatures2[i] = rw.getAverageTemperature().getValue();
-				i++;
-			}				
-		}*/
-		
-		
-		System.out.println(minHash.similarity(temperatures1, temperatures2));
+				if(i == k) continue;
+				System.out.println(i + " e " + k + " -> Jaccard: " + minHash.similarity(temperatures[i], temperatures[k]));
+			}
+		}
+	}
+	
+	public static double randomTemp()
+	{
+		double random = (Math.random() * (25 + 0)) - 0;
+		random = Math.round(random * 10);
+		return random / 10;
 	}
 }

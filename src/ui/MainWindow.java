@@ -12,6 +12,7 @@ import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.openstreetmap.gui.jmapviewer.*;
 import org.openstreetmap.gui.jmapviewer.interfaces.MapMarker;
@@ -23,6 +24,7 @@ import metrics.Coordinates;
 import metrics.Date;
 import metrics.Rainfall;
 import metrics.Temperature;
+import probability.MinHash;
 import weather.RegisteredWeather;
 import weather.Station;
 
@@ -44,6 +46,7 @@ public class MainWindow implements MouseListener, ActionListener, ChangeListener
 	
 	private JFrame mainFrame;
 	private JFrame stationFrame;
+	private JFrame jaccardFrame;
 	private JMapViewer map;
 	private Dataset dataset;
 	private JComboBox<String> dateSelectorMonth;
@@ -51,12 +54,14 @@ public class MainWindow implements MouseListener, ActionListener, ChangeListener
 	private JSpinner weatherTempSelector;
 	private JSpinner weatherRainfallSelector;
 	private JCheckBox weatherFilterCheck;
-	private SpinnerModel weatherTempModel = new SpinnerNumberModel(12.3, 1, 40, 0.1);
+	private SpinnerModel weatherTempModel = new SpinnerNumberModel(12.0, 1, 40, 1);
 	private SpinnerModel weatherRainfallModel = new SpinnerNumberModel(4.8, 0, 25, 0.1);
 	private JButton similarityButton;
 	private Date date;
 	private Temperature temp = new Temperature(new CelsiusDegree(12.3));
 	private Rainfall rain = new Rainfall(4.8);
+	private double maxJaccardDistance = 0.3;
+	private int numberOfJaccardDistancesToShow = 4;
 	
 	public MainWindow() throws IOException
 	{	
@@ -65,6 +70,7 @@ public class MainWindow implements MouseListener, ActionListener, ChangeListener
 		date = new Date("01/10/2018");
 		Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
 		this.similarityButton = new JButton("Check similarity per year");
+		this.similarityButton.addActionListener(this);
 		mainFrame = new JFrame("WeatherTools - Map");
 		mainFrame.setSize(1280,720);
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -173,6 +179,67 @@ public class MainWindow implements MouseListener, ActionListener, ChangeListener
 		dataset.importRegisteredWeathers();
 		System.out.println("LOG> Registered weathers imported with success " + this.dataset.getStations().size() + " stations are being used.");
 	}
+	
+	public void initJaccardFrame()
+	{
+		if(this.jaccardFrame != null)
+		{
+			this.jaccardFrame.revalidate();
+			this.jaccardFrame.repaint();
+			this.jaccardFrame.setVisible(false);
+		}
+		Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+		this.jaccardFrame = new JFrame("Similar temperatures for selected year");
+		this.jaccardFrame.setSize(640,360);
+		this.jaccardFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		this.jaccardFrame.setLocation(dim.width/2-mainFrame.getSize().width/2, dim.height/2-mainFrame.getSize().height/2);
+		this.jaccardFrame.setLayout(new BorderLayout());
+		JPanel jaccardPanel = new JPanel(new GridLayout(4,1));
+		
+		MinHash minHash = new MinHash(100);
+		double[][] temperatures = new double[dataset.getStations().size()][12];
+		
+		for(int i = 0; i < dataset.getStations().size(); i++)
+		{
+			Station s = dataset.getStations().get(i);
+			for(int k = 0; k < s.getRegisteredWeathers(this.date.getYear()).size(); k++)
+			{
+				RegisteredWeather rw = s.getRegisteredWeathers(this.date.getYear()).get(k);
+				temperatures[i][k] = rw.getAverageTemperature().getValue();
+			}
+		}
+		
+		int showLabelsN = 0;
+		
+		for(int i = 0; i < temperatures.length; i++)
+		{
+			temperatures[i] = minHash.removeZeros(temperatures[i]);
+			for(int k = 0; k < temperatures.length; k++)
+			{
+				temperatures[k] = minHash.removeZeros(temperatures[k]);
+				if(i == k) continue;
+				double similarity = minHash.similarity(temperatures[i], temperatures[k]);
+				if((1-similarity) <= this.maxJaccardDistance)
+				{	
+					System.out.println("-------------------------");
+					System.out.println(dataset.getStations().get(i).getName() + " and "+ dataset.getStations().get(k).getName() + " have jaccard distance of " + (1 - similarity));
+					System.out.println(Arrays.toString(temperatures[i]) + " | " + Arrays.toString(temperatures[k]));
+					System.out.println("-------------------------\n");
+					
+					if(showLabelsN < this.numberOfJaccardDistancesToShow)
+					{
+						JLabel label = new JLabel(dataset.getStations().get(i).getName() + " and "+ dataset.getStations().get(k).getName() + " have jaccard distance of " + (1 - similarity));
+						label.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
+						jaccardPanel.add(label);						
+						showLabelsN++;
+					}
+				}
+			}
+		}
+		
+		this.jaccardFrame.add(jaccardPanel, BorderLayout.CENTER);
+		this.jaccardFrame.setVisible(true);
+	}
 
 	public void mouseClicked(MouseEvent e) 
 	{
@@ -200,13 +267,13 @@ public class MainWindow implements MouseListener, ActionListener, ChangeListener
 					//Get weather for current date
 					RegisteredWeather rw = s.findWeather(this.date);
 					JLabel sTMax = new JLabel("sTMax");
-					sTMax.setText("Max temperature: " + rw.getMaxTemperature().decreaseAccuracy());
+					sTMax.setText("Max temperature: " + rw.getMaxTemperature());
 					sTMax.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
 					JLabel sTMin = new JLabel("sTMin");
-					sTMin.setText("Min temperature: " + rw.getMinTemperature().decreaseAccuracy());
+					sTMin.setText("Min temperature: " + rw.getMinTemperature());
 					sTMin.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
 					JLabel sTAvg = new JLabel("sTAvg");
-					sTAvg.setText("Average temperature: " + rw.getAverageTemperature().decreaseAccuracy());
+					sTAvg.setText("Average temperature: " + rw.getAverageTemperature());
 					sTAvg.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
 					JLabel sRain = new JLabel("sRain");
 					sRain.setText("Average rainfall: " + rw.getAverageRainfall());
@@ -256,6 +323,11 @@ public class MainWindow implements MouseListener, ActionListener, ChangeListener
 		{
 			this.updateDate();
 			this.initStationsMarkers();
+		}
+		
+		if(e.getSource() == this.similarityButton)
+		{
+			this.initJaccardFrame();
 		}
 	}
 
