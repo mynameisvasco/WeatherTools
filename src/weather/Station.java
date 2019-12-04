@@ -8,14 +8,16 @@ import probability.BloomFilter;
 
 public class Station
 {
+	private int id;
 	private String name;
 	private Coordinates location;
 	private LinkedList<RegisteredWeather> registeredWeathers;
 	private BloomFilter registeredWeathersBloomFilter;
 
-	public Station(String name, Coordinates location)
+	public Station(int id, String name, Coordinates location)
 	{
 		super();
+		this.id = id;
 		this.name = name;
 		this.location = location;
 		this.registeredWeathers = new LinkedList<RegisteredWeather>();
@@ -100,6 +102,15 @@ public class Station
 		return false;
 	}
 	
+	public void get999()
+	{
+		for(RegisteredWeather rw : this.getRegisteredWeathers(2018))
+		{
+			System.out.print(rw.getAverageTemperature().getValue() + " ,");
+		}
+		System.out.println("");
+	}
+	
 	public boolean isValid(Coordinates c)
 	{		
 		c = c.decreaseAccuracy();
@@ -113,4 +124,10 @@ public class Station
 			return false;
 		}
 	}
+
+	public int getId() 
+	{
+		return this.id;
+	}
+	
 }

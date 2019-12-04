@@ -1,50 +1,56 @@
 import java.io.IOException;
-import java.util.Arrays;
-
+import files.Dataset;
 import probability.MinHash;
+import weather.RegisteredWeather;
+import weather.Station;
 
 public class TestMinHash 
 {
-	public static double MIN_SIMILARITY = 0.7;
-	public static int NUM_STATIONS = 1000;
+	public static double MIN_SIMILARITY = 0.5;
+	public static int YEAR = 2018;
 	public static void main(String[] args) throws IOException
 	{	
-		MinHash minHash = new MinHash(10);
 		
-		double[][] temperatures = new double[NUM_STATIONS][12];
 		
-		for(int i = 0; i < NUM_STATIONS; i++)
+		Dataset dataset = new Dataset();
+		dataset.importFiles();
+		dataset.importStations();
+		dataset.importRegisteredWeathers();
+		
+		Double[][] temperatures = new Double[dataset.getMaxStationId()][12];
+		MinHash minHash = new MinHash(100, dataset.getMaxStationId());
+
+		
+		for(Station s : dataset.getStations())
 		{
-			for(int k = 0; k < 12; k++)
-			{
-				temperatures[i][k] = randomTemp();
-			}
-		}
-		
-		long beforeTime = System.currentTimeMillis();
-		
-		for(int i = 0; i < temperatures.length; i++)
-		{
-			for(int k = 0; k < temperatures.length; k++)
-			{
-				if(i == k) continue;
-				double similarity = minHash.similarity(temperatures[i], temperatures[k]);
-				if(similarity > MIN_SIMILARITY)
-				{					
-					System.out.println("—--------------------------------------");
-					System.out.println(i + " e " + k + " -> Jaccard: " + similarity);
-					System.out.println(Arrays.toString(temperatures[i]) + " | " + Arrays.toString(temperatures[k]));
+
+			Double[] array = new Double[12];
+			int i = 0;
+			if(s.getRegisteredWeathers(YEAR).size() >= 12)
+			{				
+				for(RegisteredWeather rw : s.getRegisteredWeathers(YEAR))
+				{
+					array[i] = rw.getAverageTemperature().getValue();
+					i++;
 				}
 			}
+			temperatures[s.getId()] = array;
 		}
+
+		long beforeTime = System.currentTimeMillis();
+		minHash.initSignatureTable(temperatures);
+		System.out.println("\n" + dataset.getStations().size() + " stations signed in " + ( (System.currentTimeMillis() - beforeTime) * 0.001) + " seconds");			
 		
-		System.out.println("\n" + NUM_STATIONS + " stations processed in " + ( (System.currentTimeMillis() - beforeTime) * 0.001) + " seconds");
-	}
-	
-	public static double randomTemp()
-	{
-		double random = (Math.random() * (25 + 0)) - 0;
-		random = Math.round(random);
-		return random;
+		
+		beforeTime = System.currentTimeMillis();
+		for(Station s : dataset.getStations())
+		{
+			for(Station s1 : dataset.getStations())
+			{
+				if (s == s1) continue;
+				System.out.println(s.getName() + " and " + s1.getName() + " have a jaccard distance of " + (1-minHash.similarity(s.getId(), s1.getId())));
+			}
+		}
+		System.out.println("\n" + dataset.getStations().size() + " stations compared in " + ( (System.currentTimeMillis() - beforeTime) * 0.001) + " seconds");	
 	}
 }

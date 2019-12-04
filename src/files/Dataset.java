@@ -19,8 +19,9 @@ public class Dataset
 {
 	private LinkedList<Path> filesPath;
 	private LinkedList<Station> stations;
+	private int maxStationId;
 	private String datasetsLocation = "resources/datasets";
-	
+
 	public Dataset()
 	{
 		filesPath = new LinkedList<Path>();
@@ -44,6 +45,7 @@ public class Dataset
 	
 	public LinkedList<Station> importStations() throws IOException
 	{
+		int stationId = 0;
 		for(Path path : this.filesPath)
 		{
 	        Reader reader = Files.newBufferedReader(path);
@@ -59,11 +61,14 @@ public class Dataset
 						continue mainLoop;
 					}
 	        	}
-        		this.stations.add(new Station(csvRecord.get(1), new Coordinates(
+        		this.stations.add(new Station(stationId,
+        				csvRecord.get(1), new Coordinates(
         				Double.parseDouble(csvRecord.get(2)), 
         				Double.parseDouble(csvRecord.get(3)), 
         				Double.parseDouble(csvRecord.get(4))
 				)));
+        		stationId++;
+        		this.maxStationId = stationId;
 	        }
 	        
 	        csvParser.close();
@@ -108,5 +113,10 @@ public class Dataset
 	        csvParser.close();
 		}
 		return rw;
+	}
+	
+	public int getMaxStationId()
+	{
+		return this.maxStationId;
 	}
 }

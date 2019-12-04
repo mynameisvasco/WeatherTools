@@ -12,7 +12,6 @@ import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import org.openstreetmap.gui.jmapviewer.*;
 import org.openstreetmap.gui.jmapviewer.interfaces.MapMarker;
@@ -62,6 +61,8 @@ public class MainWindow implements MouseListener, ActionListener, ChangeListener
 	private Rainfall rain = new Rainfall(4.8);
 	private double maxJaccardDistance = 0.3;
 	private int numberOfJaccardDistancesToShow = 4;
+	private MinHash minHash;
+	private Double[][] minHashTemperatures;
 	
 	public MainWindow() throws IOException
 	{	
@@ -128,7 +129,7 @@ public class MainWindow implements MouseListener, ActionListener, ChangeListener
 	public void initDateSelector()
 	{
 		dateSelectorMonth = new JComboBox<String>(Date.MONTHS_NAME);
-		dateSelectorYear = new JComboBox<String>(Date.yearsUntil2070());
+		dateSelectorYear = new JComboBox<String>(Date.yearsUntil2019());
 		dateSelectorMonth.setSelectedItem("October");
 		dateSelectorYear.setSelectedIndex(18);
 		dateSelectorMonth.addActionListener(this);
@@ -180,7 +181,32 @@ public class MainWindow implements MouseListener, ActionListener, ChangeListener
 		System.out.println("LOG> Registered weathers imported with success " + this.dataset.getStations().size() + " stations are being used.");
 	}
 	
-	public void initJaccardFrame()
+	public void initMinHash()
+	{
+		this.minHashTemperatures = new Double[dataset.getMaxStationId()][12];
+		this.minHash = new MinHash(100, dataset.getMaxStationId());
+
+		
+		for(Station s : dataset.getStations())
+		{
+
+			Double[] array = new Double[12];
+			int i = 0;
+			if(s.getRegisteredWeathers(this.date.getYear()).size() >= 12)
+			{				
+				for(RegisteredWeather rw : s.getRegisteredWeathers(this.date.getYear()))
+				{
+					array[i] = rw.getAverageTemperature().getValue();
+					i++;
+				}
+			}
+			this.minHashTemperatures[s.getId()] = array;
+		}
+		
+		this.minHash.initSignatureTable(minHashTemperatures);
+	}
+	
+	public void initMinHashFrame()
 	{
 		if(this.jaccardFrame != null)
 		{
@@ -196,34 +222,21 @@ public class MainWindow implements MouseListener, ActionListener, ChangeListener
 		this.jaccardFrame.setLayout(new BorderLayout());
 		JPanel jaccardPanel = new JPanel(new GridLayout(4,1));
 		
-		MinHash minHash = new MinHash(100);
-		double[][] temperatures = new double[dataset.getStations().size()][12];
+	
+		int showLabelsN = 0;
 		
 		for(int i = 0; i < dataset.getStations().size(); i++)
 		{
-			Station s = dataset.getStations().get(i);
-			for(int k = 0; k < s.getRegisteredWeathers(this.date.getYear()).size(); k++)
+			for(int k = 0; k < dataset.getStations().size(); k++)
 			{
-				RegisteredWeather rw = s.getRegisteredWeathers(this.date.getYear()).get(k);
-				temperatures[i][k] = rw.getAverageTemperature().getValue();
-			}
-		}
-		
-		int showLabelsN = 0;
-		
-		for(int i = 0; i < temperatures.length; i++)
-		{
-			temperatures[i] = minHash.removeZeros(temperatures[i]);
-			for(int k = 0; k < temperatures.length; k++)
-			{
-				temperatures[k] = minHash.removeZeros(temperatures[k]);
 				if(i == k) continue;
-				double similarity = minHash.similarity(temperatures[i], temperatures[k]);
+				double similarity = minHash.similarity(dataset.getStations().get(i).getId(), dataset.getStations().get(k).getId());
 				if((1-similarity) <= this.maxJaccardDistance)
 				{	
 					System.out.println("-------------------------");
 					System.out.println(dataset.getStations().get(i).getName() + " and "+ dataset.getStations().get(k).getName() + " have jaccard distance of " + (1 - similarity));
-					System.out.println(Arrays.toString(temperatures[i]) + " | " + Arrays.toString(temperatures[k]));
+					dataset.getStations().get(k).get999();
+					dataset.getStations().get(i).get999();
 					System.out.println("-------------------------\n");
 					
 					if(showLabelsN < this.numberOfJaccardDistancesToShow)
@@ -327,7 +340,8 @@ public class MainWindow implements MouseListener, ActionListener, ChangeListener
 		
 		if(e.getSource() == this.similarityButton)
 		{
-			this.initJaccardFrame();
+			this.initMinHash();
+			this.initMinHashFrame();
 		}
 	}
 

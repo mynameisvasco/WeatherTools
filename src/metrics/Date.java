@@ -121,11 +121,11 @@ public class Date
 		return new Date(localDate.getDayOfMonth(), localDate.getMonthValue(), localDate.getYear());
 	}
 	
-	public static String[] yearsUntil2070()
+	public static String[] yearsUntil2019()
 	{
 		String[] years = new String[71];
 		
-		for(int i = 0; i < 71; i++)
+		for(int i = 0; i < 20; i++)
 		{
 			if( i < 9)
 			{				

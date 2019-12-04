@@ -16,33 +16,39 @@ public class BloomFilter
 	{
 		this.n = n;
 		this.p = p;
-		this.m = (int) Math.abs(Math.ceil((this.n * Math.log(this.p) / Math.log(1/Math.pow(2,  Math.log(2)))))) * 1024;
+		this.m = (int) Math.abs(Math.ceil((this.n * Math.log(this.p) / Math.log(1/Math.pow(2,  Math.log(2))))));
 	    k = (int) Math.round(Math.log(2) * this.m / this.n); //Best K
 		this.array = new BitSet(this.m);
 		this.seeds = generateSeeds();
 	}
 	
-	public <T> int getPosition(T element)
+	public <T> int getPosition(T element, int seed)
 	{
-		int index = 0;
+		byte[] elementBytes = element.toString().getBytes();
+		int index = MurmurHash3.hash32(elementBytes, 0, elementBytes.length, seed);
 		
-		for(int i = 0; i < this.k; i++)
-		{
-			byte[] elementBytes = element.toString().getBytes();
-			index = MurmurHash3.hash32(elementBytes, 0, elementBytes.length, this.seeds[i]);
-		}
-		
-		return Math.abs(index) % this.m;
+		return Math.abs(index % this.m);
 	}
 	
 	public <T> void add(T element)
 	{
-		this.array.set(getPosition(element), true);
+		for(int i = 0; i < this.k; i++)
+		{			
+			this.array.set(getPosition(element, this.seeds[i]), true);
+		}
 	}
 	
 	public <T> boolean contains(T element)
 	{
-		return this.array.get(getPosition(element));
+		for(int i = 0; i < this.k; i++)
+		{			
+			if(!this.array.get(getPosition(element, this.seeds[i])))
+			{
+				return false;
+			}
+		}
+		
+		return true;
 	}
 	
 	public int[] generateSeeds()
@@ -51,9 +57,9 @@ public class BloomFilter
 		
 		for(int i = 0; i < this.k; i++)
 		{
-			seeds[i] = (int) (Math.random() * 142102012 - 1);
+			seeds[i] = (int) (Math.random() * 10007) + 1 ;
 		}
-		
+
 		return seeds;
 	}
 }
