@@ -1,4 +1,7 @@
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
+
 import files.Dataset;
 import probability.MinHash;
 import weather.RegisteredWeather;
@@ -18,7 +21,7 @@ public class TestMinHash
 		dataset.importRegisteredWeathers();
 		
 		Double[][] temperatures = new Double[dataset.getMaxStationId()][12];
-		MinHash minHash = new MinHash(100, dataset.getMaxStationId());
+		MinHash minHash = new MinHash(500, dataset.getMaxStationId());
 
 		
 		for(Station s : dataset.getStations())
@@ -48,9 +51,29 @@ public class TestMinHash
 			for(Station s1 : dataset.getStations())
 			{
 				if (s == s1) continue;
-				System.out.println(s.getName() + " and " + s1.getName() + " have a jaccard distance of " + (1-minHash.similarity(s.getId(), s1.getId())));
+				System.out.println(s.getName() + " and " + s1.getName() + "-> MinHash: " + minHash.similarity(s.getId(), s1.getId()) +
+						" | Jaccard Similarity " + (jaccardSimilarity(temperatures[s.getId()], temperatures[s1.getId()])));
 			}
 		}
 		System.out.println("\n" + dataset.getStations().size() + " stations compared in " + ( (System.currentTimeMillis() - beforeTime) * 0.001) + " seconds");	
 	}
+	
+	static private double jaccardSimilarity(Double[] a, Double[] b) {
+
+	    Set<Double> s1 = new HashSet<Double>();
+	    for (int i = 0; i < a.length; i++) {
+	        s1.add(a[i]);
+	    }
+	    Set<Double> s2 = new HashSet<Double>();
+	    for (int i = 0; i < b.length; i++) {
+	        s2.add(b[i]);
+	    }
+
+	    final int sa = s1.size();
+	    final int sb = s2.size();
+	    s1.retainAll(s2);
+	    final int intersection = s1.size();
+	    return 1d / (sa + sb - intersection) * intersection;
+	}
+
 }

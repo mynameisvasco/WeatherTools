@@ -55,14 +55,16 @@ public class MainWindow implements MouseListener, ActionListener, ChangeListener
 	private JCheckBox weatherFilterCheck;
 	private SpinnerModel weatherTempModel = new SpinnerNumberModel(12.0, 1, 40, 1);
 	private SpinnerModel weatherRainfallModel = new SpinnerNumberModel(4.8, 0, 25, 0.1);
+	private SpinnerModel minSimilaritySpinnerModel = new SpinnerNumberModel(0.3, 0, 1, 0.1);
 	private JButton similarityButton;
 	private Date date;
 	private Temperature temp = new Temperature(new CelsiusDegree(12.3));
 	private Rainfall rain = new Rainfall(4.8);
-	private double maxJaccardDistance = 0.3;
-	private int numberOfJaccardDistancesToShow = 4;
+	private double minSimilarity = 0.3;
+	private int numberOfSimilarityToShow = 4;
 	private MinHash minHash;
 	private Double[][] minHashTemperatures;
+	private JSpinner minSimilaritySpinner;
 	
 	public MainWindow() throws IOException
 	{	
@@ -151,11 +153,13 @@ public class MainWindow implements MouseListener, ActionListener, ChangeListener
 		weatherTempSelector = new JSpinner(this.weatherTempModel);
 		weatherRainfallSelector = new JSpinner(this.weatherRainfallModel);
 		weatherFilterCheck = new JCheckBox("Enable filters");
+		minSimilaritySpinner = new JSpinner(this.minSimilaritySpinnerModel);
 		JLabel tempLabel = new JLabel("Average Temperature");
 		JLabel rainLabel = new JLabel("Average Rainfall");
 		weatherTempSelector.addChangeListener(this);
 		weatherRainfallSelector.addChangeListener(this);
 		weatherFilterCheck.addChangeListener(this);
+		minSimilaritySpinner.addChangeListener(this);
 		JPanel weatherSelectorPanel = new JPanel();
 		weatherSelectorPanel.setLayout(new GridLayout(3, 3));
 		weatherSelectorPanel.add(tempLabel);
@@ -165,6 +169,7 @@ public class MainWindow implements MouseListener, ActionListener, ChangeListener
 		weatherSelectorPanel.add(weatherRainfallSelector);
 		weatherSelectorPanel.add(weatherFilterCheck);
 		weatherSelectorPanel.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
+		weatherSelectorPanel.add(this.minSimilaritySpinner);
 		weatherSelectorPanel.add(this.similarityButton);
 		this.mainFrame.add(weatherSelectorPanel, BorderLayout.SOUTH);
 		this.map.revalidate();
@@ -231,17 +236,17 @@ public class MainWindow implements MouseListener, ActionListener, ChangeListener
 			{
 				if(i == k) continue;
 				double similarity = minHash.similarity(dataset.getStations().get(i).getId(), dataset.getStations().get(k).getId());
-				if((1-similarity) <= this.maxJaccardDistance)
+				if(similarity >= this.minSimilarity)
 				{	
 					System.out.println("-------------------------");
-					System.out.println(dataset.getStations().get(i).getName() + " and "+ dataset.getStations().get(k).getName() + " have jaccard distance of " + (1 - similarity));
+					System.out.println(dataset.getStations().get(i).getName() + " and "+ dataset.getStations().get(k).getName() + " have a similarity of  " + (similarity));
 					dataset.getStations().get(k).get999();
 					dataset.getStations().get(i).get999();
 					System.out.println("-------------------------\n");
 					
-					if(showLabelsN < this.numberOfJaccardDistancesToShow)
+					if(showLabelsN < this.numberOfSimilarityToShow)
 					{
-						JLabel label = new JLabel(dataset.getStations().get(i).getName() + " and "+ dataset.getStations().get(k).getName() + " have jaccard distance of " + (1 - similarity));
+						JLabel label = new JLabel(dataset.getStations().get(i).getName() + " and "+ dataset.getStations().get(k).getName() + " have a similarity of " + (similarity));
 						label.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
 						jaccardPanel.add(label);						
 						showLabelsN++;
@@ -348,6 +353,17 @@ public class MainWindow implements MouseListener, ActionListener, ChangeListener
 	@Override
 	public void stateChanged(ChangeEvent e) 
 	{
+		if(e.getSource() == this.minSimilaritySpinner)
+		{
+			try
+			{
+				this.minSimilarity = ((double)this.minSimilaritySpinner.getValue());
+			}
+			catch(Exception e2)
+			{
+				this.minSimilarity = 0;
+			}
+		}
 		if(e.getSource() == this.weatherRainfallSelector)
 		{
 			try
