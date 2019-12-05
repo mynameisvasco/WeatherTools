@@ -52,7 +52,7 @@ public class TestMinHash
 				if(temperatures[s.getId()].length == 0 && temperatures[s1.getId()].length == 0) continue;
 				if(similarity > MIN_SIMILARITY)
 				{					
-					System.out.println(s.getName() + " and " + s1.getName() + "-> MinHash: " + similarity +
+					System.out.println(s.getName() + " and " + s1.getName() + " -> MinHash: " + similarity +
 							" | Jaccard Similarity " + (jaccardSimilarity(temperatures[s.getId()], temperatures[s1.getId()])));
 				}
 			}

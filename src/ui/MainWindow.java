@@ -7,6 +7,7 @@ import java.awt.GridLayout;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
@@ -43,7 +44,7 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.table.DefaultTableModel;
-public class MainWindow implements MouseListener, ActionListener, ChangeListener
+public class MainWindow extends MouseAdapter implements ActionListener, ChangeListener
 {
 	
 	private JFrame mainFrame;
@@ -56,13 +57,13 @@ public class MainWindow implements MouseListener, ActionListener, ChangeListener
 	private JSpinner weatherTempSelector;
 	private JSpinner weatherRainfallSelector;
 	private JCheckBox weatherFilterCheck;
-	private SpinnerModel weatherTempModel = new SpinnerNumberModel(12.0, 1, 40, 1);
-	private SpinnerModel weatherRainfallModel = new SpinnerNumberModel(4.8, 0, 25, 0.1);
+	private SpinnerModel weatherTempModel = new SpinnerNumberModel(20.0, -30, 40, 1);
+	private SpinnerModel weatherRainfallModel = new SpinnerNumberModel(3.9, 0, 25, 0.1);
 	private SpinnerModel minSimilaritySpinnerModel = new SpinnerNumberModel(0.3, 0, 1, 0.1);
 	private JButton similarityButton;
 	private Date date;
-	private Temperature temp = new Temperature(new CelsiusDegree(12.3));
-	private Rainfall rain = new Rainfall(4.8);
+	private Temperature temp = new Temperature(new CelsiusDegree(20.0));
+	private Rainfall rain = new Rainfall(3.9);
 	private double minSimilarity = 0.3;
 	private MinHash minHash;
 	private Double[][] minHashTemperatures;
@@ -228,7 +229,8 @@ public class MainWindow implements MouseListener, ActionListener, ChangeListener
 		this.minHashFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		this.minHashFrame.setLocation(dim.width/2-mainFrame.getSize().width/2, dim.height/2-mainFrame.getSize().height/2);
 		this.minHashFrame.setLayout(new BorderLayout());
-        DefaultTableModel tableModel = new DefaultTableModel() 
+        @SuppressWarnings("serial")
+		DefaultTableModel tableModel = new DefaultTableModel() 
         {
 			public boolean isCellEditable(int row,int column)
 			{
@@ -315,31 +317,6 @@ public class MainWindow implements MouseListener, ActionListener, ChangeListener
 		}
 	}
 
-	@Override
-	public void mousePressed(MouseEvent e) 
-	{
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void mouseReleased(MouseEvent e) 
-	{
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void mouseEntered(MouseEvent e) 
-	{
-		// TODO Auto-generated method stub
-	}
-
-	@Override
-	public void mouseExited(MouseEvent e) 
-	{
-		// TODO Auto-generated method stub
-	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) 
