@@ -12,9 +12,7 @@ public class TestMinHash
 	public static double MIN_SIMILARITY = 0.5;
 	public static int YEAR = 2018;
 	public static void main(String[] args) throws IOException
-	{	
-		
-		
+	{			
 		Dataset dataset = new Dataset();
 		dataset.importFiles();
 		dataset.importStations();
@@ -44,15 +42,19 @@ public class TestMinHash
 		minHash.initSignatureTable(temperatures);
 		System.out.println("\n" + dataset.getStations().size() + " stations signed in " + ( (System.currentTimeMillis() - beforeTime) * 0.001) + " seconds");			
 		
-		
 		beforeTime = System.currentTimeMillis();
 		for(Station s : dataset.getStations())
 		{
 			for(Station s1 : dataset.getStations())
 			{
-				if (s == s1) continue;
-				System.out.println(s.getName() + " and " + s1.getName() + "-> MinHash: " + minHash.similarity(s.getId(), s1.getId()) +
-						" | Jaccard Similarity " + (jaccardSimilarity(temperatures[s.getId()], temperatures[s1.getId()])));
+				if (s == s1);
+				double similarity = minHash.similarity(s.getId(), s1.getId());
+				if(temperatures[s.getId()].length == 0 && temperatures[s1.getId()].length == 0) continue;
+				if(similarity > MIN_SIMILARITY)
+				{					
+					System.out.println(s.getName() + " and " + s1.getName() + "-> MinHash: " + similarity +
+							" | Jaccard Similarity " + (jaccardSimilarity(temperatures[s.getId()], temperatures[s1.getId()])));
+				}
 			}
 		}
 		System.out.println("\n" + dataset.getStations().size() + " stations compared in " + ( (System.currentTimeMillis() - beforeTime) * 0.001) + " seconds");	

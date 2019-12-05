@@ -64,12 +64,7 @@ public class Station
 		if(this.getName().equals(s.getName())) return true;
 		return false;
 	}
-	
-	public boolean containsWeather(String s)
-	{
-		return this.registeredWeathersBloomFilter.contains(s);
-	}
-	
+		
 	public RegisteredWeather findWeather(Date date)
 	{
 		for(RegisteredWeather rw : this.registeredWeathers)
@@ -89,7 +84,24 @@ public class Station
 				+ "Location -> " + this.getLocation();
 	}
 	
-	public boolean containsRegisteredWeatherInDate(Date d)
+	public boolean containsWeather(int year)
+	{
+		for(RegisteredWeather rw : this.registeredWeathers)
+		{
+			if(rw.getDate().getYear() == year)
+			{
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	public boolean containsWeather(String s)
+	{
+		return this.registeredWeathersBloomFilter.contains(s);
+	}
+	public boolean containsWeather(Date d)
 	{
 		for(RegisteredWeather rw : this.registeredWeathers)
 		{

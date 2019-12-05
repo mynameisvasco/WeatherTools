@@ -12,6 +12,7 @@ import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Vector;
 
 import org.openstreetmap.gui.jmapviewer.*;
 import org.openstreetmap.gui.jmapviewer.interfaces.MapMarker;
@@ -34,18 +35,20 @@ import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
+import javax.swing.JTable;
 import javax.swing.SpinnerModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-
+import javax.swing.table.DefaultTableModel;
 public class MainWindow implements MouseListener, ActionListener, ChangeListener
 {
 	
 	private JFrame mainFrame;
 	private JFrame stationFrame;
-	private JFrame jaccardFrame;
+	private JFrame minHashFrame;
 	private JMapViewer map;
 	private Dataset dataset;
 	private JComboBox<String> dateSelectorMonth;
@@ -61,10 +64,10 @@ public class MainWindow implements MouseListener, ActionListener, ChangeListener
 	private Temperature temp = new Temperature(new CelsiusDegree(12.3));
 	private Rainfall rain = new Rainfall(4.8);
 	private double minSimilarity = 0.3;
-	private int numberOfSimilarityToShow = 4;
 	private MinHash minHash;
 	private Double[][] minHashTemperatures;
 	private JSpinner minSimilaritySpinner;
+	private JTable similarityTable;
 	
 	public MainWindow() throws IOException
 	{	
@@ -116,7 +119,7 @@ public class MainWindow implements MouseListener, ActionListener, ChangeListener
 			}
 			else
 			{
-				if(s.containsRegisteredWeatherInDate(this.date))
+				if(s.containsWeather(this.date))
 				{
 					MapMarkerDot marker = new MapMarkerDot(Color.RED, s.getLocation().getLatitude(), s.getLocation().getLongitude());
 					map.addMapMarker(marker);
@@ -213,22 +216,28 @@ public class MainWindow implements MouseListener, ActionListener, ChangeListener
 	
 	public void initMinHashFrame()
 	{
-		if(this.jaccardFrame != null)
+		if(this.minHashFrame != null)
 		{
-			this.jaccardFrame.revalidate();
-			this.jaccardFrame.repaint();
-			this.jaccardFrame.setVisible(false);
+			this.minHashFrame.revalidate();
+			this.minHashFrame.repaint();
+			this.minHashFrame.setVisible(false);
 		}
 		Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
-		this.jaccardFrame = new JFrame("Similar temperatures for selected year");
-		this.jaccardFrame.setSize(640,360);
-		this.jaccardFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		this.jaccardFrame.setLocation(dim.width/2-mainFrame.getSize().width/2, dim.height/2-mainFrame.getSize().height/2);
-		this.jaccardFrame.setLayout(new BorderLayout());
-		JPanel jaccardPanel = new JPanel(new GridLayout(4,1));
-		
-	
-		int showLabelsN = 0;
+		this.minHashFrame = new JFrame("Similar temperatures for selected year");
+		this.minHashFrame.setSize(640,360);
+		this.minHashFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		this.minHashFrame.setLocation(dim.width/2-mainFrame.getSize().width/2, dim.height/2-mainFrame.getSize().height/2);
+		this.minHashFrame.setLayout(new BorderLayout());
+        DefaultTableModel tableModel = new DefaultTableModel() 
+        {
+			public boolean isCellEditable(int row,int column)
+			{
+				return false;
+			}
+        };
+        tableModel.addColumn("Stations");
+        tableModel.addColumn("Similarity Index");
+     
 		
 		for(int i = 0; i < dataset.getStations().size(); i++)
 		{
@@ -238,25 +247,23 @@ public class MainWindow implements MouseListener, ActionListener, ChangeListener
 				double similarity = minHash.similarity(dataset.getStations().get(i).getId(), dataset.getStations().get(k).getId());
 				if(similarity >= this.minSimilarity)
 				{	
-					System.out.println("-------------------------");
-					System.out.println(dataset.getStations().get(i).getName() + " and "+ dataset.getStations().get(k).getName() + " have a similarity of  " + (similarity));
-					dataset.getStations().get(k).get999();
-					dataset.getStations().get(i).get999();
-					System.out.println("-------------------------\n");
-					
-					if(showLabelsN < this.numberOfSimilarityToShow)
-					{
-						JLabel label = new JLabel(dataset.getStations().get(i).getName() + " and "+ dataset.getStations().get(k).getName() + " have a similarity of " + (similarity));
-						label.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
-						jaccardPanel.add(label);						
-						showLabelsN++;
-					}
+					if(this.minHashTemperatures[dataset.getStations().get(k).getId()].length == 0 || this.minHashTemperatures[dataset.getStations().get(i).getId()].length == 0) continue;
+				
+						Vector<String> rowVector = new Vector<String>();
+						rowVector.add(dataset.getStations().get(i).getName() + " and "+ dataset.getStations().get(k).getName());
+						rowVector.add(String.valueOf(similarity));
+						tableModel.addRow(rowVector);	
+
 				}
 			}
 		}
-		
-		this.jaccardFrame.add(jaccardPanel, BorderLayout.CENTER);
-		this.jaccardFrame.setVisible(true);
+		this.similarityTable = new JTable(tableModel);
+		JScrollPane scrollPane = new JScrollPane(this.similarityTable);
+		this.similarityTable.setFillsViewportHeight(true);
+		this.minHashFrame.setLayout(new BorderLayout());
+		this.minHashFrame.add(this.similarityTable.getTableHeader(), BorderLayout.PAGE_START);
+		this.minHashFrame.add(scrollPane);
+		this.minHashFrame.setVisible(true);
 	}
 
 	public void mouseClicked(MouseEvent e) 

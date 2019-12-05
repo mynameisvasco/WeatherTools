@@ -9,7 +9,7 @@ public class TestBloomFilter
 	public static int NUM_WEATHERS = 100;
 	public static void main(String[] args) throws IOException
 	{
-		BloomFilter bf = new BloomFilter(NUM_WEATHERS, 0.1);
+		BloomFilter bf = new BloomFilter(NUM_WEATHERS, 0.01);
 		List<String> list = new ArrayList<String>();
 		
 		//Use registered weathers of first station only
@@ -43,12 +43,14 @@ public class TestBloomFilter
 				falsePositive++;
 			}
 				
-			//System.out.println("Iteration: " + iteration + " - Bloom Filter: " + bloom);
+			System.out.println("Iteration: " + iteration + " - Bloom Filter: " + bloom);
 		}
 		
 
 		System.out.println(falseNegatives + " false negatives found.");
 		System.out.println("False positives: " + (double) falsePositive / 100000);
+		System.out.println("Neste teste é comparado o modo iterativo, que confima de forma absoluta se o elemento pertence de facto ao conjunto ou não, e o modo bloom filter"
+				+ "\nque testa o módulo Bloom Filter desenvolvido, que verica também se o elemente percetence ao mesmo.");
 	}
 	
 	public static String generateWeatherHash()
